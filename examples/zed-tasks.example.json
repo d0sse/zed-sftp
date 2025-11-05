@@ -1,0 +1,78 @@
+[
+  {
+    "label": "SFTP: Upload Current File",
+    "command": "scp",
+    "args": [
+      "$ZED_FILE",
+      "user@host:/remote/path/$ZED_RELATIVE_FILE"
+    ],
+    "reveal": "always",
+    "tags": ["sftp", "upload"]
+  },
+  {
+    "label": "SFTP: Upload Project",
+    "command": "rsync",
+    "args": [
+      "-avz",
+      "--progress",
+      "--exclude='.git'",
+      "--exclude='node_modules'",
+      "--exclude='.zed'",
+      "--exclude='*.log'",
+      ".",
+      "user@host:/remote/path/"
+    ],
+    "reveal": "always",
+    "tags": ["sftp", "upload", "sync"]
+  },
+  {
+    "label": "SFTP: Download Project",
+    "command": "rsync",
+    "args": [
+      "-avz",
+      "--progress",
+      "--exclude='.git'",
+      "user@host:/remote/path/",
+      "."
+    ],
+    "reveal": "always",
+    "tags": ["sftp", "download", "sync"]
+  },
+  {
+    "label": "SFTP: Sync Both Ways",
+    "command": "rsync",
+    "args": [
+      "-avzu",
+      "--progress",
+      "--exclude='.git'",
+      "--exclude='node_modules'",
+      ".",
+      "user@host:/remote/path/"
+    ],
+    "reveal": "always",
+    "tags": ["sftp", "sync"]
+  },
+  {
+    "label": "SFTP: Dry Run Upload",
+    "command": "rsync",
+    "args": [
+      "-avzn",
+      "--exclude='.git'",
+      ".",
+      "user@host:/remote/path/"
+    ],
+    "reveal": "always",
+    "tags": ["sftp", "test"]
+  },
+  {
+    "label": "SFTP: Watch and Sync",
+    "command": "bash",
+    "args": [
+      "-c",
+      "fswatch -o . | xargs -n1 -I{} rsync -avz --exclude='.git' . user@host:/remote/path/"
+    ],
+    "reveal": "always",
+    "tags": ["sftp", "watch"]
+  }
+]
+

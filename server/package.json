@@ -1,0 +1,32 @@
+{
+  "name": "zed-sftp-server",
+  "version": "1.0.0",
+  "description": "SFTP Language Server for Zed",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "zed",
+    "sftp",
+    "language-server",
+    "lsp"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ssh2-sftp-client": "^11.0.0",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "chokidar": "^4.0.3",
+    "minimatch": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ssh2-sftp-client": "^9.0.3",
+    "typescript": "^5.7.2"
+  }
+}
+

@@ -1,0 +1,32 @@
+{
+  "username": "deploy",
+  "privateKeyPath": "~/.ssh/id_rsa",
+  "uploadOnSave": false,
+  "ignore": [
+    ".git",
+    "node_modules",
+    ".zed"
+  ],
+  "profiles": {
+    "dev": {
+      "name": "Development Server",
+      "host": "dev.example.com",
+      "remotePath": "/var/www/dev",
+      "uploadOnSave": true
+    },
+    "staging": {
+      "name": "Staging Server",
+      "host": "staging.example.com",
+      "remotePath": "/var/www/staging",
+      "uploadOnSave": false
+    },
+    "production": {
+      "name": "Production Server",
+      "host": "prod.example.com",
+      "remotePath": "/var/www/html",
+      "uploadOnSave": false
+    }
+  },
+  "defaultProfile": "dev"
+}
+

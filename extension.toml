@@ -1,0 +1,12 @@
+id = "sftp"
+name = "SFTP"
+version = "0.1.0"
+schema_version = 1
+authors = ["Your Name <your.email@example.com>"]
+description = "SFTP/FTP file synchronization for Zed - Upload on save, sync files and folders"
+repository = "https://github.com/andreyc0d3r/zed-sftp"
+
+[language_servers.sftp-server]
+name = "SFTP Server"
+language = "*"
+
