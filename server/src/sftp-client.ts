@@ -2,18 +2,20 @@ import Client from 'ssh2-sftp-client';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Connection } from 'vscode-languageserver';
-import { SftpConfig } from './config';
+import { SftpConfig, ConfigManager } from './config';
 
 export class SftpClient {
   private client: Client;
   private config: SftpConfig;
   private connection: Connection;
+  private configManager: ConfigManager;
   private isConnected: boolean = false;
 
-  constructor(config: SftpConfig, connection: Connection) {
+  constructor(config: SftpConfig, connection: Connection, configManager: ConfigManager) {
     this.client = new Client();
     this.config = config;
     this.connection = connection;
+    this.configManager = configManager;
   }
 
   private async connect(): Promise<void> {
@@ -61,16 +63,18 @@ export class SftpClient {
     }
   }
 
-  private getRemotePath(localPath: string): string {
-    const relativePath = path.relative(this.config.localPath || process.cwd(), localPath);
-    return path.posix.join(this.config.remotePath, relativePath.replace(/\\/g, '/'));
-  }
-
   async uploadFile(localPath: string): Promise<void> {
     await this.connect();
 
     try {
-      const remotePath = this.getRemotePath(localPath);
+      // Use ConfigManager to get remote path (respects context setting)
+      const remotePath = this.configManager.getRemotePath(localPath);
+
+      if (!remotePath) {
+        this.connection.console.warn(`File is outside context path: ${localPath}`);
+        return;
+      }
+
       const remoteDir = path.posix.dirname(remotePath);
 
       // Ensure remote directory exists
@@ -88,7 +92,13 @@ export class SftpClient {
     await this.connect();
 
     try {
-      const remotePath = this.getRemotePath(localPath);
+      const remotePath = this.configManager.getRemotePath(localPath);
+
+      if (!remotePath) {
+        this.connection.console.warn(`File is outside context path: ${localPath}`);
+        return;
+      }
+
       const localDir = path.dirname(localPath);
 
       // Ensure local directory exists
@@ -108,7 +118,12 @@ export class SftpClient {
     await this.connect();
 
     try {
-      const remoteFolderPath = this.getRemotePath(localFolderPath);
+      const remoteFolderPath = this.configManager.getRemotePath(localFolderPath);
+
+      if (!remoteFolderPath) {
+        this.connection.console.warn(`Folder is outside context path: ${localFolderPath}`);
+        return;
+      }
 
       // Upload directory recursively
       await this.client.uploadDir(localFolderPath, remoteFolderPath);
@@ -122,7 +137,12 @@ export class SftpClient {
     await this.connect();
 
     try {
-      const remoteFolderPath = this.getRemotePath(localFolderPath);
+      const remoteFolderPath = this.configManager.getRemotePath(localFolderPath);
+
+      if (!remoteFolderPath) {
+        this.connection.console.warn(`Folder is outside context path: ${localFolderPath}`);
+        return;
+      }
 
       // Ensure local directory exists
       if (!fs.existsSync(localFolderPath)) {
@@ -141,7 +161,12 @@ export class SftpClient {
     await this.connect();
 
     try {
-      const remoteFolderPath = this.getRemotePath(localFolderPath);
+      const remoteFolderPath = this.configManager.getRemotePath(localFolderPath);
+
+      if (!remoteFolderPath) {
+        this.connection.console.warn(`Folder is outside context path: ${localFolderPath}`);
+        return;
+      }
 
       // Upload directory (this will sync local to remote)
       await this.client.uploadDir(localFolderPath, remoteFolderPath);

@@ -41,11 +41,12 @@ const ssh2_sftp_client_1 = __importDefault(require("ssh2-sftp-client"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 class SftpClient {
-    constructor(config, connection) {
+    constructor(config, connection, configManager) {
         this.isConnected = false;
         this.client = new ssh2_sftp_client_1.default();
         this.config = config;
         this.connection = connection;
+        this.configManager = configManager;
     }
     async connect() {
         if (this.isConnected) {
@@ -87,14 +88,15 @@ class SftpClient {
             this.isConnected = false;
         }
     }
-    getRemotePath(localPath) {
-        const relativePath = path.relative(this.config.localPath || process.cwd(), localPath);
-        return path.posix.join(this.config.remotePath, relativePath.replace(/\\/g, '/'));
-    }
     async uploadFile(localPath) {
         await this.connect();
         try {
-            const remotePath = this.getRemotePath(localPath);
+            // Use ConfigManager to get remote path (respects context setting)
+            const remotePath = this.configManager.getRemotePath(localPath);
+            if (!remotePath) {
+                this.connection.console.warn(`File is outside context path: ${localPath}`);
+                return;
+            }
             const remoteDir = path.posix.dirname(remotePath);
             // Ensure remote directory exists
             await this.client.mkdir(remoteDir, true);
@@ -109,7 +111,11 @@ class SftpClient {
     async downloadFile(localPath) {
         await this.connect();
         try {
-            const remotePath = this.getRemotePath(localPath);
+            const remotePath = this.configManager.getRemotePath(localPath);
+            if (!remotePath) {
+                this.connection.console.warn(`File is outside context path: ${localPath}`);
+                return;
+            }
             const localDir = path.dirname(localPath);
             // Ensure local directory exists
             if (!fs.existsSync(localDir)) {
@@ -126,7 +132,11 @@ class SftpClient {
     async uploadFolder(localFolderPath) {
         await this.connect();
         try {
-            const remoteFolderPath = this.getRemotePath(localFolderPath);
+            const remoteFolderPath = this.configManager.getRemotePath(localFolderPath);
+            if (!remoteFolderPath) {
+                this.connection.console.warn(`Folder is outside context path: ${localFolderPath}`);
+                return;
+            }
             // Upload directory recursively
             await this.client.uploadDir(localFolderPath, remoteFolderPath);
             this.connection.console.log(`Uploaded folder: ${localFolderPath} -> ${remoteFolderPath}`);
@@ -138,7 +148,11 @@ class SftpClient {
     async downloadFolder(localFolderPath) {
         await this.connect();
         try {
-            const remoteFolderPath = this.getRemotePath(localFolderPath);
+            const remoteFolderPath = this.configManager.getRemotePath(localFolderPath);
+            if (!remoteFolderPath) {
+                this.connection.console.warn(`Folder is outside context path: ${localFolderPath}`);
+                return;
+            }
             // Ensure local directory exists
             if (!fs.existsSync(localFolderPath)) {
                 fs.mkdirSync(localFolderPath, { recursive: true });
@@ -154,7 +168,11 @@ class SftpClient {
     async syncFolder(localFolderPath) {
         await this.connect();
         try {
-            const remoteFolderPath = this.getRemotePath(localFolderPath);
+            const remoteFolderPath = this.configManager.getRemotePath(localFolderPath);
+            if (!remoteFolderPath) {
+                this.connection.console.warn(`Folder is outside context path: ${localFolderPath}`);
+                return;
+            }
             // Upload directory (this will sync local to remote)
             await this.client.uploadDir(localFolderPath, remoteFolderPath);
             this.connection.console.log(`Synced folder: ${localFolderPath} -> ${remoteFolderPath}`);

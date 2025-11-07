@@ -13,6 +13,7 @@ export interface SftpConfig {
   passphrase?: string;
   remotePath: string;
   localPath?: string;
+  context?: string;  // Local subdirectory to use as root (e.g., "site/wp-content/")
   uploadOnSave?: boolean;
   downloadOnOpen?: boolean;
   ignore?: string[];
@@ -41,6 +42,7 @@ export class ConfigManager {
   private workspaceFolder: string;
   private config: SftpConfig | null = null;
   private ignorePatterns: string[] = [];
+  private contextPath: string = '';  // Resolved context path
 
   constructor(workspaceFolder: string) {
     this.workspaceFolder = workspaceFolder;
@@ -72,6 +74,15 @@ export class ConfigManager {
         // Set default local path
         if (!this.config.localPath) {
           this.config.localPath = this.workspaceFolder;
+        }
+
+        // Handle context path (local subdirectory to use as root)
+        if (this.config.context) {
+          // Normalize context path (remove leading/trailing slashes)
+          let context = this.config.context.replace(/^\/+|\/+$/g, '');
+          this.contextPath = path.join(this.workspaceFolder, context);
+        } else {
+          this.contextPath = this.workspaceFolder;
         }
 
         // Load ignore patterns
@@ -112,8 +123,49 @@ export class ConfigManager {
     return false;
   }
 
+  /**
+   * Check if a file is within the context path
+   */
+  isInContext(filePath: string): boolean {
+    const normalized = path.normalize(filePath);
+    const contextNormalized = path.normalize(this.contextPath);
+    return normalized.startsWith(contextNormalized);
+  }
+
+  /**
+   * Get the remote path for a local file, respecting the context setting
+   */
+  getRemotePath(localFilePath: string): string | null {
+    if (!this.config) {
+      return null;
+    }
+
+    // Check if file is within context
+    if (!this.isInContext(localFilePath)) {
+      return null;
+    }
+
+    // Get relative path from context directory
+    const relativePath = path.relative(this.contextPath, localFilePath);
+
+    // Normalize remote path (ensure it starts with /)
+    let remotePath = this.config.remotePath;
+    if (!remotePath.startsWith('/')) {
+      remotePath = '/' + remotePath;
+    }
+
+    // Combine remote path with relative path (use forward slashes for remote)
+    const remoteFilePath = path.posix.join(remotePath, relativePath.split(path.sep).join('/'));
+
+    return remoteFilePath;
+  }
+
   getConfig(): SftpConfig | null {
     return this.config;
+  }
+
+  getContextPath(): string {
+    return this.contextPath;
   }
 
   async saveConfig(config: SftpConfig): Promise<void> {

@@ -1,14 +1,14 @@
 import { Connection } from 'vscode-languageserver';
-import { SftpConfig } from './config';
+import { SftpConfig, ConfigManager } from './config';
 export declare class SftpClient {
     private client;
     private config;
     private connection;
+    private configManager;
     private isConnected;
-    constructor(config: SftpConfig, connection: Connection);
+    constructor(config: SftpConfig, connection: Connection, configManager: ConfigManager);
     private connect;
     private disconnect;
-    private getRemotePath;
     uploadFile(localPath: string): Promise<void>;
     downloadFile(localPath: string): Promise<void>;
     uploadFolder(localFolderPath: string): Promise<void>;

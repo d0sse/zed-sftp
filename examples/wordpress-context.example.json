@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/andreyc0d3r/zed-sftp/main/schema/sftp-config.schema.json",
+  "name": "WordPress Site",
+  "context": "site/wp-content/",
+  "protocol": "sftp",
+  "host": "example.com",
+  "port": 2222,
+  "username": "deploy",
+  "remotePath": "/wp-content/",
+  "uploadOnSave": true,
+  "privateKeyPath": "~/.ssh/id_rsa",
+  "ignore": [
+    ".git",
+    ".vscode",
+    ".zed",
+    "node_modules",
+    ".DS_Store",
+    "*.log"
+  ]
+}
+

@@ -9,6 +9,7 @@ export interface SftpConfig {
     passphrase?: string;
     remotePath: string;
     localPath?: string;
+    context?: string;
     uploadOnSave?: boolean;
     downloadOnOpen?: boolean;
     ignore?: string[];
@@ -36,10 +37,20 @@ export declare class ConfigManager {
     private workspaceFolder;
     private config;
     private ignorePatterns;
+    private contextPath;
     constructor(workspaceFolder: string);
     loadConfig(): Promise<SftpConfig | null>;
     shouldIgnore(filePath: string): boolean;
+    /**
+     * Check if a file is within the context path
+     */
+    isInContext(filePath: string): boolean;
+    /**
+     * Get the remote path for a local file, respecting the context setting
+     */
+    getRemotePath(localFilePath: string): string | null;
     getConfig(): SftpConfig | null;
+    getContextPath(): string;
     saveConfig(config: SftpConfig): Promise<void>;
     reloadConfig(): Promise<SftpConfig | null>;
 }

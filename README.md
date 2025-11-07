@@ -124,6 +124,31 @@ Create a `.zed/sftp.json` file in your project root:
 }
 ```
 
+### Using Context Path
+
+The `context` field allows you to specify a subdirectory within your workspace as the root for SFTP operations. This is useful for projects where only a specific folder should be synced.
+
+**Example: WordPress Development**
+
+```json
+{
+  "context": "site/wp-content/",
+  "protocol": "sftp",
+  "host": "example.com",
+  "port": 2222,
+  "username": "deploy",
+  "remotePath": "/wp-content/",
+  "uploadOnSave": true,
+  "privateKeyPath": "~/.ssh/id_rsa"
+}
+```
+
+With this configuration:
+- **Local**: `site/wp-content/themes/style.css` (in your workspace)
+- **Remote**: `/wp-content/themes/style.css` (on the server)
+
+Files outside the `site/wp-content/` directory will be ignored and won't be uploaded.
+
 ## 🚀 Usage
 
 ### Automatic Upload on Save
@@ -154,6 +179,7 @@ Use the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) to run:
 | `passphrase` | string | - | SSH key passphrase |
 | `remotePath` | string | **required** | Remote directory path |
 | `localPath` | string | workspace | Local directory path |
+| `context` | string | - | Local subdirectory to use as root (e.g., `"site/wp-content/"`) |
 | `uploadOnSave` | boolean | `false` | Auto-upload on save |
 | `ignore` | string[] | `[]` | Ignore patterns (glob) |
 | `concurrency` | number | `4` | Max concurrent transfers |

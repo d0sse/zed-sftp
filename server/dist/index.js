@@ -72,8 +72,12 @@ connection.onInitialized(async () => {
             configManager = new config_1.ConfigManager(workspaceFolder);
             const config = await configManager.loadConfig();
             if (config) {
-                sftpClient = new sftp_client_1.SftpClient(config, connection);
+                sftpClient = new sftp_client_1.SftpClient(config, connection, configManager);
                 connection.console.log(`SFTP config loaded for ${config.host}`);
+                // Log context path if set
+                if (config.context) {
+                    connection.console.log(`Context path: ${config.context} -> ${configManager.getContextPath()}`);
+                }
                 // Start file watcher if uploadOnSave is enabled
                 if (config.uploadOnSave) {
                     connection.console.log('Upload on save is enabled');
@@ -98,6 +102,11 @@ documents.onDidSave(async (event) => {
         return;
     }
     const filePath = event.document.uri.replace('file://', '');
+    // Check if file is within context path
+    if (!configManager.isInContext(filePath)) {
+        connection.console.log(`File is outside context path: ${filePath}`);
+        return;
+    }
     // Check if file should be ignored
     if (configManager.shouldIgnore(filePath)) {
         connection.console.log(`Ignoring file: ${filePath}`);
