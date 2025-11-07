@@ -5,6 +5,11 @@ set -e
 echo "🔧 Setting up SFTP Extension for Zed..."
 echo ""
 
+# Source cargo environment if it exists
+if [ -f "$HOME/.cargo/env" ]; then
+    source "$HOME/.cargo/env"
+fi
+
 # Check for Rust
 if ! command -v cargo &> /dev/null; then
     echo "❌ Rust is not installed"
@@ -50,8 +55,9 @@ npm run build
 cd ..
 
 echo ""
-echo "🦀 Building Rust extension..."
-cargo build --release
+echo "🦀 Building Rust extension for WebAssembly..."
+rustup target add wasm32-wasip1 2>/dev/null || true
+cargo build --target wasm32-wasip1 --release
 
 echo ""
 echo "✅ Build complete!"

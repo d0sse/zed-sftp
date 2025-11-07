@@ -1,17 +1,17 @@
-import SftpClient from 'ssh2-sftp-client';
+import Client from 'ssh2-sftp-client';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Connection } from 'vscode-languageserver';
 import { SftpConfig } from './config';
 
 export class SftpClient {
-  private client: SftpClient;
+  private client: Client;
   private config: SftpConfig;
   private connection: Connection;
   private isConnected: boolean = false;
 
   constructor(config: SftpConfig, connection: Connection) {
-    this.client = new SftpClient();
+    this.client = new Client();
     this.config = config;
     this.connection = connection;
   }

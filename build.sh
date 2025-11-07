@@ -2,6 +2,11 @@
 
 set -e
 
+# Source cargo environment if it exists
+if [ -f "$HOME/.cargo/env" ]; then
+    source "$HOME/.cargo/env"
+fi
+
 echo "Building SFTP Extension for Zed..."
 
 # Build the language server
@@ -11,9 +16,10 @@ npm install
 npm run build
 cd ..
 
-# Build the Rust extension
-echo "Building Rust extension..."
-cargo build --release
+# Build the Rust extension for WebAssembly
+echo "Building Rust extension for WebAssembly..."
+rustup target add wasm32-wasip1 2>/dev/null || true
+cargo build --target wasm32-wasip1 --release
 
 echo "Build complete!"
 echo ""

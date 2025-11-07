@@ -25,9 +25,11 @@ The language server is written in Node.js/TypeScript and uses the `ssh2-sftp-cli
 
 ### Prerequisites
 
-1. **Rust** - Required to compile the extension
+1. **Rust** - Required to compile the extension to WebAssembly
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   # After installation, add WebAssembly target:
+   rustup target add wasm32-wasip1
    ```
 
 2. **Node.js** - Required for the language server (v18 or later)

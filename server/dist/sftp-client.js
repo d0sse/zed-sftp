@@ -1,0 +1,191 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SftpClient = void 0;
+const ssh2_sftp_client_1 = __importDefault(require("ssh2-sftp-client"));
+const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
+class SftpClient {
+    constructor(config, connection) {
+        this.isConnected = false;
+        this.client = new ssh2_sftp_client_1.default();
+        this.config = config;
+        this.connection = connection;
+    }
+    async connect() {
+        if (this.isConnected) {
+            return;
+        }
+        try {
+            const connectConfig = {
+                host: this.config.host,
+                port: this.config.port || 22,
+                username: this.config.username,
+            };
+            // Handle authentication
+            if (this.config.password) {
+                connectConfig.password = this.config.password;
+            }
+            else if (this.config.privateKeyPath) {
+                const keyPath = this.config.privateKeyPath.replace('~', process.env.HOME || '');
+                connectConfig.privateKey = fs.readFileSync(keyPath);
+                if (this.config.passphrase) {
+                    connectConfig.passphrase = this.config.passphrase;
+                }
+            }
+            // Connection timeout
+            if (this.config.connectTimeout) {
+                connectConfig.readyTimeout = this.config.connectTimeout;
+            }
+            await this.client.connect(connectConfig);
+            this.isConnected = true;
+            this.connection.console.log(`Connected to ${this.config.host}`);
+        }
+        catch (error) {
+            this.isConnected = false;
+            throw new Error(`Failed to connect to SFTP server: ${error}`);
+        }
+    }
+    async disconnect() {
+        if (this.isConnected) {
+            await this.client.end();
+            this.isConnected = false;
+        }
+    }
+    getRemotePath(localPath) {
+        const relativePath = path.relative(this.config.localPath || process.cwd(), localPath);
+        return path.posix.join(this.config.remotePath, relativePath.replace(/\\/g, '/'));
+    }
+    async uploadFile(localPath) {
+        await this.connect();
+        try {
+            const remotePath = this.getRemotePath(localPath);
+            const remoteDir = path.posix.dirname(remotePath);
+            // Ensure remote directory exists
+            await this.client.mkdir(remoteDir, true);
+            // Upload file
+            await this.client.put(localPath, remotePath);
+            this.connection.console.log(`Uploaded: ${localPath} -> ${remotePath}`);
+        }
+        catch (error) {
+            throw new Error(`Failed to upload file: ${error}`);
+        }
+    }
+    async downloadFile(localPath) {
+        await this.connect();
+        try {
+            const remotePath = this.getRemotePath(localPath);
+            const localDir = path.dirname(localPath);
+            // Ensure local directory exists
+            if (!fs.existsSync(localDir)) {
+                fs.mkdirSync(localDir, { recursive: true });
+            }
+            // Download file
+            await this.client.get(remotePath, localPath);
+            this.connection.console.log(`Downloaded: ${remotePath} -> ${localPath}`);
+        }
+        catch (error) {
+            throw new Error(`Failed to download file: ${error}`);
+        }
+    }
+    async uploadFolder(localFolderPath) {
+        await this.connect();
+        try {
+            const remoteFolderPath = this.getRemotePath(localFolderPath);
+            // Upload directory recursively
+            await this.client.uploadDir(localFolderPath, remoteFolderPath);
+            this.connection.console.log(`Uploaded folder: ${localFolderPath} -> ${remoteFolderPath}`);
+        }
+        catch (error) {
+            throw new Error(`Failed to upload folder: ${error}`);
+        }
+    }
+    async downloadFolder(localFolderPath) {
+        await this.connect();
+        try {
+            const remoteFolderPath = this.getRemotePath(localFolderPath);
+            // Ensure local directory exists
+            if (!fs.existsSync(localFolderPath)) {
+                fs.mkdirSync(localFolderPath, { recursive: true });
+            }
+            // Download directory recursively
+            await this.client.downloadDir(remoteFolderPath, localFolderPath);
+            this.connection.console.log(`Downloaded folder: ${remoteFolderPath} -> ${localFolderPath}`);
+        }
+        catch (error) {
+            throw new Error(`Failed to download folder: ${error}`);
+        }
+    }
+    async syncFolder(localFolderPath) {
+        await this.connect();
+        try {
+            const remoteFolderPath = this.getRemotePath(localFolderPath);
+            // Upload directory (this will sync local to remote)
+            await this.client.uploadDir(localFolderPath, remoteFolderPath);
+            this.connection.console.log(`Synced folder: ${localFolderPath} -> ${remoteFolderPath}`);
+        }
+        catch (error) {
+            throw new Error(`Failed to sync folder: ${error}`);
+        }
+    }
+    async listRemoteFiles(remotePath) {
+        await this.connect();
+        try {
+            const list = await this.client.list(remotePath);
+            return list.map((item) => item.name);
+        }
+        catch (error) {
+            throw new Error(`Failed to list remote files: ${error}`);
+        }
+    }
+    async deleteRemoteFile(remotePath) {
+        await this.connect();
+        try {
+            await this.client.delete(remotePath);
+            this.connection.console.log(`Deleted remote file: ${remotePath}`);
+        }
+        catch (error) {
+            throw new Error(`Failed to delete remote file: ${error}`);
+        }
+    }
+    async close() {
+        await this.disconnect();
+    }
+}
+exports.SftpClient = SftpClient;
+//# sourceMappingURL=sftp-client.js.map

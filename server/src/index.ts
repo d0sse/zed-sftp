@@ -5,7 +5,6 @@ import {
   InitializeParams,
   TextDocumentSyncKind,
   InitializeResult,
-  DidSaveTextDocumentParams,
   ExecuteCommandParams,
 } from 'vscode-languageserver/node';
 
@@ -74,7 +73,7 @@ connection.onInitialized(async () => {
 });
 
 // Handle document save
-documents.onDidSave(async (event: DidSaveTextDocumentParams) => {
+documents.onDidSave(async (event) => {
   if (!sftpClient || !configManager) {
     return;
   }
@@ -84,7 +83,7 @@ documents.onDidSave(async (event: DidSaveTextDocumentParams) => {
     return;
   }
 
-  const filePath = event.textDocument.uri.replace('file://', '');
+  const filePath = event.document.uri.replace('file://', '');
 
   // Check if file should be ignored
   if (configManager.shouldIgnore(filePath)) {
