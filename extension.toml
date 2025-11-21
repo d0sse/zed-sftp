@@ -3,10 +3,9 @@ name = "SFTP"
 version = "0.1.0"
 schema_version = 1
 authors = ["Andrey <andreyc0d3r@gmail.com>"]
-description = "SFTP/FTP file synchronization for Zed - Upload on save, sync files and folders"
+description = "SFTP file synchronization for Zed - Automatic upload on save with context path support"
 repository = "https://github.com/andreyc0d3r/zed-sftp"
 
 [language_servers.sftp-server]
 name = "SFTP Server"
-language = "*"
-
+languages = ["PHP", "JavaScript", "TypeScript", "CSS", "HTML", "JSON", "Markdown", "YAML", "XML", "Plain Text", "Python", "Ruby", "Go", "Rust", "C", "C++", "Java", "Swift"]

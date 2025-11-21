@@ -41,26 +41,42 @@ class ConfigManager {
     constructor(workspaceFolder) {
         this.config = null;
         this.ignorePatterns = [];
-        this.contextPath = ''; // Resolved context path
+        this.contextPath = ""; // Resolved context path
         this.workspaceFolder = workspaceFolder;
     }
     async loadConfig() {
         // Try .zed/sftp.json first
-        let configPath = path.join(this.workspaceFolder, '.zed', 'sftp.json');
+        let configPath = path.join(this.workspaceFolder, ".zed", "sftp.json");
         if (!fs.existsSync(configPath)) {
             // Fall back to .vscode/sftp.json for compatibility
-            configPath = path.join(this.workspaceFolder, '.vscode', 'sftp.json');
+            configPath = path.join(this.workspaceFolder, ".vscode", "sftp.json");
         }
         if (!fs.existsSync(configPath)) {
             // Try root level sftp.json
-            configPath = path.join(this.workspaceFolder, 'sftp.json');
+            configPath = path.join(this.workspaceFolder, "sftp.json");
         }
         if (!fs.existsSync(configPath)) {
             return null;
         }
         try {
-            const configContent = fs.readFileSync(configPath, 'utf-8');
+            const configContent = fs.readFileSync(configPath, "utf-8");
             this.config = JSON.parse(configContent);
+            // Validate required fields
+            if (!this.config) {
+                throw new Error("Config is empty");
+            }
+            if (!this.config.host) {
+                throw new Error("Missing required field: host");
+            }
+            if (!this.config.username) {
+                throw new Error("Missing required field: username");
+            }
+            if (!this.config.remotePath) {
+                throw new Error("Missing required field: remotePath");
+            }
+            if (!this.config.password && !this.config.privateKeyPath) {
+                throw new Error("Either password or privateKeyPath must be provided");
+            }
             if (this.config) {
                 // Set default local path
                 if (!this.config.localPath) {
@@ -69,7 +85,7 @@ class ConfigManager {
                 // Handle context path (local subdirectory to use as root)
                 if (this.config.context) {
                     // Normalize context path (remove leading/trailing slashes)
-                    let context = this.config.context.replace(/^\/+|\/+$/g, '');
+                    let context = this.config.context.replace(/^\/+|\/+$/g, "");
                     this.contextPath = path.join(this.workspaceFolder, context);
                 }
                 else {
@@ -78,11 +94,11 @@ class ConfigManager {
                 // Load ignore patterns
                 this.ignorePatterns = this.config.ignore || [];
                 // Add default ignore patterns
-                if (!this.ignorePatterns.includes('.git')) {
-                    this.ignorePatterns.push('.git');
+                if (!this.ignorePatterns.includes(".git")) {
+                    this.ignorePatterns.push(".git");
                 }
-                if (!this.ignorePatterns.includes('node_modules')) {
-                    this.ignorePatterns.push('node_modules');
+                if (!this.ignorePatterns.includes("node_modules")) {
+                    this.ignorePatterns.push("node_modules");
                 }
                 // Handle profiles
                 if (this.config.profiles && this.config.defaultProfile) {
@@ -128,13 +144,21 @@ class ConfigManager {
         }
         // Get relative path from context directory
         const relativePath = path.relative(this.contextPath, localFilePath);
+        // Security check: prevent path traversal
+        if (relativePath.includes("..")) {
+            throw new Error("Path traversal detected in file path");
+        }
         // Normalize remote path (ensure it starts with /)
         let remotePath = this.config.remotePath;
-        if (!remotePath.startsWith('/')) {
-            remotePath = '/' + remotePath;
+        if (!remotePath.startsWith("/")) {
+            remotePath = "/" + remotePath;
         }
         // Combine remote path with relative path (use forward slashes for remote)
-        const remoteFilePath = path.posix.join(remotePath, relativePath.split(path.sep).join('/'));
+        const remoteFilePath = path.posix.join(remotePath, relativePath.split(path.sep).join("/"));
+        // Final security check on combined path
+        if (remoteFilePath.includes("..")) {
+            throw new Error("Path traversal detected in remote path");
+        }
         return remoteFilePath;
     }
     getConfig() {
@@ -144,11 +168,11 @@ class ConfigManager {
         return this.contextPath;
     }
     async saveConfig(config) {
-        const configDir = path.join(this.workspaceFolder, '.zed');
+        const configDir = path.join(this.workspaceFolder, ".zed");
         if (!fs.existsSync(configDir)) {
             fs.mkdirSync(configDir, { recursive: true });
         }
-        const configPath = path.join(configDir, 'sftp.json');
+        const configPath = path.join(configDir, "sftp.json");
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
         this.config = config;
     }

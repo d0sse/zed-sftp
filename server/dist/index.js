@@ -38,6 +38,14 @@ const vscode_languageserver_textdocument_1 = require("vscode-languageserver-text
 const path = __importStar(require("path"));
 const sftp_client_1 = require("./sftp-client");
 const config_1 = require("./config");
+// Add error handlers
+process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error);
+    process.exit(1);
+});
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
 // Create a connection for the server
 const connection = (0, node_1.createConnection)(node_1.ProposedFeatures.all);
 // Create a simple text document manager
@@ -47,26 +55,26 @@ let configManager;
 let sftpClient;
 connection.onInitialize((params) => {
     if (params.workspaceFolders && params.workspaceFolders.length > 0) {
-        workspaceFolder = params.workspaceFolders[0].uri.replace('file://', '');
+        workspaceFolder = params.workspaceFolders[0].uri.replace("file://", "");
     }
     const result = {
         capabilities: {
-            textDocumentSync: node_1.TextDocumentSyncKind.Full,
+            textDocumentSync: {
+                openClose: true,
+                change: node_1.TextDocumentSyncKind.Full,
+                save: {
+                    includeText: false,
+                },
+            },
             executeCommandProvider: {
-                commands: [
-                    'sftp.upload',
-                    'sftp.download',
-                    'sftp.sync',
-                    'sftp.uploadFolder',
-                    'sftp.downloadFolder',
-                ],
+                commands: ["sftp.upload", "sftp.download", "sftp.sync", "sftp.uploadFolder", "sftp.downloadFolder"],
             },
         },
     };
     return result;
 });
 connection.onInitialized(async () => {
-    connection.console.log('SFTP Language Server initialized');
+    connection.console.log("SFTP Language Server initialized");
     if (workspaceFolder) {
         try {
             configManager = new config_1.ConfigManager(workspaceFolder);
@@ -80,11 +88,11 @@ connection.onInitialized(async () => {
                 }
                 // Start file watcher if uploadOnSave is enabled
                 if (config.uploadOnSave) {
-                    connection.console.log('Upload on save is enabled');
+                    connection.console.log("Upload on save is enabled");
                 }
             }
             else {
-                connection.console.warn('No SFTP config found');
+                connection.console.warn("No SFTP config found");
             }
         }
         catch (error) {
@@ -101,7 +109,7 @@ documents.onDidSave(async (event) => {
     if (!config || !config.uploadOnSave) {
         return;
     }
-    const filePath = event.document.uri.replace('file://', '');
+    const filePath = event.document.uri.replace("file://", "");
     // Check if file is within context path
     if (!configManager.isInContext(filePath)) {
         connection.console.log(`File is outside context path: ${filePath}`);
@@ -125,37 +133,37 @@ documents.onDidSave(async (event) => {
 // Handle commands
 connection.onExecuteCommand(async (params) => {
     if (!sftpClient || !configManager) {
-        connection.window.showErrorMessage('SFTP not configured');
+        connection.window.showErrorMessage("SFTP not configured");
         return;
     }
     try {
         switch (params.command) {
-            case 'sftp.upload':
+            case "sftp.upload":
                 if (params.arguments && params.arguments[0]) {
                     const filePath = params.arguments[0];
                     await sftpClient.uploadFile(filePath);
                     connection.window.showInformationMessage(`Uploaded: ${path.basename(filePath)}`);
                 }
                 break;
-            case 'sftp.download':
+            case "sftp.download":
                 if (params.arguments && params.arguments[0]) {
                     const filePath = params.arguments[0];
                     await sftpClient.downloadFile(filePath);
                     connection.window.showInformationMessage(`Downloaded: ${path.basename(filePath)}`);
                 }
                 break;
-            case 'sftp.sync':
+            case "sftp.sync":
                 await sftpClient.syncFolder(workspaceFolder);
-                connection.window.showInformationMessage('Sync completed');
+                connection.window.showInformationMessage("Sync completed");
                 break;
-            case 'sftp.uploadFolder':
+            case "sftp.uploadFolder":
                 if (params.arguments && params.arguments[0]) {
                     const folderPath = params.arguments[0];
                     await sftpClient.uploadFolder(folderPath);
                     connection.window.showInformationMessage(`Uploaded folder: ${path.basename(folderPath)}`);
                 }
                 break;
-            case 'sftp.downloadFolder':
+            case "sftp.downloadFolder":
                 if (params.arguments && params.arguments[0]) {
                     const folderPath = params.arguments[0];
                     await sftpClient.downloadFolder(folderPath);

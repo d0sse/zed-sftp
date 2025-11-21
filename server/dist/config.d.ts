@@ -1,6 +1,6 @@
 export interface SftpConfig {
     name?: string;
-    protocol: 'sftp' | 'ftp' | 'ftps';
+    protocol: "sftp" | "ftp" | "ftps";
     host: string;
     port?: number;
     username: string;
