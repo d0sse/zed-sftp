@@ -10,6 +10,7 @@ This is a Zed extension for SFTP/FTP file synchronization, inspired by the popul
 - **Upload on Save** - Automatically upload files when you save them
 - **Manual Upload/Download** - Upload or download files and folders on demand
 - **Sync Folders** - Synchronize entire directories between local and remote
+- **Diff with Remote** - Compare local files against remote versions using Zed's native diff UI
 - **Multiple Profiles** - Support for multiple server configurations
 - **Ignore Patterns** - Exclude files and folders from sync (like .git, node_modules)
 - **SSH Key Authentication** - Secure authentication with SSH keys
@@ -164,6 +165,7 @@ Use the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) to run:
 - **SFTP: Upload Folder** - Upload entire folder
 - **SFTP: Download Folder** - Download entire folder
 - **SFTP: Sync** - Sync local to remote
+- **SFTP: Diff with Remote** - Compare local file with remote version in Zed's diff view
 
 ### Configuration Options
 
@@ -249,7 +251,7 @@ Use the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) to run:
 | Multiple Profiles | ✅ | ✅ | Implemented |
 | Ignore Patterns | ✅ | ✅ | Implemented |
 | Remote Explorer | ✅ | ❌ | Planned |
-| Diff with Remote | ✅ | ❌ | Planned |
+| Diff with Remote | ✅ | ✅ | Implemented |
 | FTP/FTPS | ✅ | ❌ | Planned |
 | File Watcher | ✅ | ⚠️ | Partial (save only) |
 
@@ -403,6 +405,12 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development instructions.
 
 ## 📝 Changelog
 
+### v0.2.0
+
+- ✅ Remote Diff — compare local files against remote versions using Zed's native diff UI (`zed --diff`)
+- ✅ New `sftp.diff` LSP command
+- ✅ Example Zed task for triggering diff via keybinding
+
 ### v0.1.0 (Initial Release)
 
 - ✅ Upload on save functionality
@@ -417,7 +425,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development instructions.
 ## 🗺️ Roadmap
 
 - [ ] Remote file explorer
-- [ ] Diff with remote files
+- [x] Diff with remote files (via `zed --diff`)
 - [ ] FTP/FTPS protocol support
 - [ ] File system watcher (beyond save events)
 - [ ] Progress indicators

@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const node_1 = require("vscode-languageserver/node");
 const vscode_languageserver_textdocument_1 = require("vscode-languageserver-textdocument");
 const path = __importStar(require("path"));
+const child_process_1 = require("child_process");
 const sftp_client_1 = require("./sftp-client");
 const config_1 = require("./config");
 // Add error handlers
@@ -67,7 +68,7 @@ connection.onInitialize((params) => {
                 },
             },
             executeCommandProvider: {
-                commands: ["sftp.upload", "sftp.download", "sftp.sync", "sftp.uploadFolder", "sftp.downloadFolder"],
+                commands: ["sftp.upload", "sftp.download", "sftp.sync", "sftp.uploadFolder", "sftp.downloadFolder", "sftp.diff"],
             },
         },
     };
@@ -168,6 +169,21 @@ connection.onExecuteCommand(async (params) => {
                     const folderPath = params.arguments[0];
                     await sftpClient.downloadFolder(folderPath);
                     connection.window.showInformationMessage(`Downloaded folder: ${path.basename(folderPath)}`);
+                }
+                break;
+            case "sftp.diff":
+                if (params.arguments && params.arguments[0]) {
+                    const filePath = params.arguments[0];
+                    connection.console.log(`Fetching remote version for diff: ${filePath}`);
+                    const tempFile = await sftpClient.downloadToTemp(filePath);
+                    // Open Zed's native diff UI comparing remote (old) vs local (new)
+                    (0, child_process_1.execFile)("zed", ["--diff", tempFile, filePath], (error) => {
+                        if (error) {
+                            connection.console.error(`Failed to open diff view: ${error}`);
+                            connection.window.showErrorMessage(`Failed to open diff: ${error.message}`);
+                        }
+                    });
+                    connection.window.showInformationMessage(`Diff: ${path.basename(filePath)} (remote vs local)`);
                 }
                 break;
             default:

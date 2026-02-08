@@ -14,6 +14,7 @@ export declare class SftpClient {
     uploadFolder(localFolderPath: string): Promise<void>;
     downloadFolder(localFolderPath: string): Promise<void>;
     syncFolder(localFolderPath: string): Promise<void>;
+    downloadToTemp(localPath: string): Promise<string>;
     listRemoteFiles(remotePath: string): Promise<string[]>;
     deleteRemoteFile(remotePath: string): Promise<void>;
     close(): Promise<void>;

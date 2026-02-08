@@ -73,6 +73,16 @@
     ],
     "reveal": "always",
     "tags": ["sftp", "watch"]
+  },
+  {
+    "label": "SFTP: Diff with Remote",
+    "command": "bash",
+    "args": [
+      "-c",
+      "REMOTE_FILE=$(mktemp /tmp/zed-sftp-diff.XXXXXX) && scp user@host:/remote/path/$ZED_RELATIVE_FILE \"$REMOTE_FILE\" && zed --diff \"$REMOTE_FILE\" \"$ZED_FILE\""
+    ],
+    "reveal": "never",
+    "tags": ["sftp", "diff"]
   }
 ]
 

@@ -1,6 +1,7 @@
 import Client from 'ssh2-sftp-client';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import { Connection } from 'vscode-languageserver';
 import { SftpConfig, ConfigManager } from './config';
 
@@ -173,6 +174,36 @@ export class SftpClient {
       this.connection.console.log(`Synced folder: ${localFolderPath} -> ${remoteFolderPath}`);
     } catch (error) {
       throw new Error(`Failed to sync folder: ${error}`);
+    }
+  }
+
+  async downloadToTemp(localPath: string): Promise<string> {
+    await this.connect();
+
+    try {
+      const remotePath = this.configManager.getRemotePath(localPath);
+
+      if (!remotePath) {
+        throw new Error(`File is outside context path: ${localPath}`);
+      }
+
+      // Create a deterministic temp directory for remote copies
+      const tempDir = path.join(os.tmpdir(), 'zed-sftp-diff');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      // Use a filename that encodes the remote origin to avoid collisions
+      const basename = path.basename(localPath);
+      const hash = Buffer.from(remotePath).toString('base64url').slice(0, 16);
+      const tempFile = path.join(tempDir, `${hash}_remote_${basename}`);
+
+      await this.client.get(remotePath, tempFile);
+      this.connection.console.log(`Downloaded remote copy: ${remotePath} -> ${tempFile}`);
+
+      return tempFile;
+    } catch (error) {
+      throw new Error(`Failed to download remote file for diff: ${error}`);
     }
   }
 

@@ -11,6 +11,7 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 import * as path from "path";
 import * as fs from "fs";
+import { execFile } from "child_process";
 import { SftpClient } from "./sftp-client";
 import { ConfigManager } from "./config";
 
@@ -49,7 +50,7 @@ connection.onInitialize((params: InitializeParams) => {
 				},
 			},
 			executeCommandProvider: {
-				commands: ["sftp.upload", "sftp.download", "sftp.sync", "sftp.uploadFolder", "sftp.downloadFolder"],
+				commands: ["sftp.upload", "sftp.download", "sftp.sync", "sftp.uploadFolder", "sftp.downloadFolder", "sftp.diff"],
 			},
 		},
 	};
@@ -165,6 +166,22 @@ connection.onExecuteCommand(async (params: ExecuteCommandParams) => {
 					const folderPath = params.arguments[0] as string;
 					await sftpClient.downloadFolder(folderPath);
 					connection.window.showInformationMessage(`Downloaded folder: ${path.basename(folderPath)}`);
+				}
+				break;
+
+			case "sftp.diff":
+				if (params.arguments && params.arguments[0]) {
+					const filePath = params.arguments[0] as string;
+					connection.console.log(`Fetching remote version for diff: ${filePath}`);
+					const tempFile = await sftpClient.downloadToTemp(filePath);
+					// Open Zed's native diff UI comparing remote (old) vs local (new)
+					execFile("zed", ["--diff", tempFile, filePath], (error) => {
+						if (error) {
+							connection.console.error(`Failed to open diff view: ${error}`);
+							connection.window.showErrorMessage(`Failed to open diff: ${error.message}`);
+						}
+					});
+					connection.window.showInformationMessage(`Diff: ${path.basename(filePath)} (remote vs local)`);
 				}
 				break;
 
